@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScrabbleArt</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Config Tailwind pour les couleurs personnalisées -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0f172a', // Slate 900
+                            800: '#1e293b', // Slate 800
+                            700: '#334155', // Slate 700
+                        },
+                        tile: {
+                            gold: '#fbbf24',
+                            default: '#e2e8f0'
+                        }
+                    },
+                    animation: {
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        pop: {
+                            '0%': { transform: 'scale(0.5)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Pattern de fond pour la grille */
+        .grid-pattern {
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Utilitaire pour centrer le texte des tuiles */
+        .tile-text {
+            text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Cacher la scrollbar sur mobile mais garder le scroll */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+    </style>
+</head>
+
+<body
+    class="bg-dark-900 text-slate-100 h-screen flex flex-col font-sans overflow-hidden selection:bg-indigo-500 selection:text-white">
+
+    <!-- HEADER -->
+    <header class="bg-dark-800 border-b border-dark-700 p-3 z-20 flex justify-between items-center shadow-md shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-500/30">
+                <!-- Icon Grid -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M3 9h18" />
+                    <path d="M3 15h18" />
+                    <path d="M9 3v18" />
+                    <path d="M15 3v18" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-white">Scrabble<span class="text-indigo-400">Art</span>
+                </h1>
+                <p class="text-[10px] text-slate-400 font-medium uppercase tracking-widest hidden sm:block">Dark Edition
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div id="statsContainer"
+                class="hidden sm:flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full bg-dark-700/50 border border-dark-700">
+                <!-- Injecté par JS -->
+            </div>
+
+            <button onclick="app.regenerate()"
+                class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg transition-all shadow-lg shadow-indigo-500/20 active:scale-95 font-semibold text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="animate-spin-slow">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M8 16H3v5" />
+                </svg>
+                <span class="hidden sm:inline">Régénérer</span>
+            </button>
+
+            <button onclick="app.confirmClear()"
+                class="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                title="Tout effacer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    <line x1="10" x2="10" y1="11" y2="17" />
+                    <line x1="14" x2="14" y1="11" y2="17" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+        <!-- SIDEBAR (CONTROLS) -->
+        <aside
+            class="order-2 md:order-1 bg-dark-800 border-t md:border-r border-dark-700 md:w-80 flex flex-col shadow-2xl z-10 h-[50vh] md:h-full">
+
+            <!-- TABS -->
+            <div class="flex border-b border-dark-700">
+                <button onclick="app.switchTab('inventory')" id="tab-inventory"
+                    class="flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors text-indigo-400 border-b-2 border-indigo-500 bg-dark-700/30">
+                    Mes Mots (<span id="wordCount">0</span>)
+                </button>
+                <button onclick="app.switchTab('suggestions')" id="tab-suggestions"
+                    class="flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors text-slate-500 hover:bg-dark-700/50 hover:text-slate-300">
+                    <div class="flex items-center justify-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                            <path d="M5 3v4" />
+                            <path d="M9 3v4" />
+                            <path d="M3 5h4" />
+                            <path d="M3 9h4" />
+                        </svg>
+                        Suggestions
+                    </div>
+                </button>
+            </div>
+
+            <!-- TAB: INVENTORY -->
+            <div id="content-inventory" class="flex-1 flex flex-col overflow-hidden">
+                <!-- INPUT -->
+                <div class="p-4 border-b border-dark-700 bg-dark-800/50">
+                    <div class="flex gap-2">
+                        <input type="text" id="wordInput" placeholder="AJOUTER UN MOT..."
+                            class="flex-1 bg-dark-900 border border-dark-600 text-white rounded-lg px-3 py-2 uppercase text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-500 shadow-inner">
+                        <button onclick="app.addFromInput()"
+                            class="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-lg transition-colors shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M5 12h14" />
+                                <path d="M12 5v14" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- LIST -->
+                <div id="wordListContainer" class="flex-1 overflow-y-auto p-3 space-y-2">
+                    <!-- Généré par JS -->
+                </div>
+            </div>
+
+            <!-- TAB: SUGGESTIONS -->
+            <div id="content-suggestions" class="hidden flex-1 overflow-y-auto p-4 bg-dark-900/50">
+                <div id="suggestionsContainer" class="space-y-6">
+                    <!-- Généré par JS -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN PANEL: GRID -->
+        <section class="order-1 md:order-2 flex-1 bg-dark-900 relative overflow-hidden flex flex-col">
+            <!-- Grid Container with custom drag scroll -->
+            <div id="gridContainer"
+                class="flex-1 overflow-auto p-10 flex items-center justify-center cursor-grab active:cursor-grabbing grid-pattern select-none">
+                <div id="gridBoard"
+                    class="bg-dark-800 shadow-2xl border-[8px] border-dark-700 rounded-xl relative transition-all duration-300">
+                    <!-- Généré par JS -->
+                </div>
+            </div>
+
+            <!-- Floating Legend -->
+            <div class="absolute bottom-6 right-6 pointer-events-none opacity-80 z-30">
+                <div
+                    class="bg-dark-800/90 backdrop-blur px-4 py-3 rounded-xl shadow-xl border border-dark-600 text-[11px] text-slate-400 flex flex-col gap-2">
+                    <div class="flex items-center gap-2"><span
+                            class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></span>
+                        Favoris</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                        Standard</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- CONFIG & DATA ---
+        const GRID_SIZE = 22;
+        const CELL_SIZE_MOBILE = 30;
+        const CELL_SIZE_DESKTOP = 42;
+
+        const SUGGESTIONS = {
+            "Famille": ["PAPA", "MAMAN", "FAMILLE", "BEBE", "FOYER", "LIENS", "FRERE", "SOEUR"],
+            "Positif": ["AMOUR", "JOIE", "PAIX", "ESPOIR", "BONHEUR", "FORCE", "REVE", "LIBERTE"],
+            "Nature": ["SOLEIL", "OCEAN", "FLEUR", "ETOILE", "LUNE", "MONTAGNE", "AZUR", "ETE"],
+            "Passion": ["MUSIQUE", "DANSE", "POESIE", "ART", "VOYAGE", "REVE", "PASSION"]
+        };
+
+        const INITIAL_WORDS = [
+            { id: '1', text: "LUCAS", starred: true },
+            { id: '2', text: "AMOUR", starred: true },
+            { id: '3', text: "EMMA", starred: false },
+            { id: '4', text: "LEO", starred: false }
+        ];
+
+        // --- APP CLASS ---
+        class ScrabbleApp {
+            constructor() {
+                this.grid = [];
+                this.words = [...INITIAL_WORDS];
+                this.placedIds = new Set();
+                this.cellSize = window.innerWidth < 768 ? CELL_SIZE_MOBILE : CELL_SIZE_DESKTOP;
+
+                // Elements
+                this.els = {
+                    gridBoard: document.getElementById('gridBoard'),
+                    wordList: document.getElementById('wordListContainer'),
+                    input: document.getElementById('wordInput'),
+                    wordCount: document.getElementById('wordCount'),
+                    gridContainer: document.getElementById('gridContainer'),
+                    stats: document.getElementById('statsContainer'),
+                    sugContainer: document.getElementById('suggestionsContainer'),
+                    tabInv: document.getElementById('tab-inventory'),
+                    tabSug: document.getElementById('tab-suggestions'),
+                    contentInv: document.getElementById('content-inventory'),
+                    contentSug: document.getElementById('content-suggestions'),
+                };
+
+                this.init();
+            }
+
+            init() {
+                // Setup Input listener
+                this.els.input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') this.addFromInput();
+                });
+
+                // Init Drag to Scroll
+                this.initDragScroll();
+
+                // Setup suggestions UI
+                this.renderSuggestions();
+
+                // Initial Generation
+                this.regenerate();
+
+                // Resize listener
+                window.addEventListener('resize', () => {
+                    this.cellSize = window.innerWidth < 768 ? CELL_SIZE_MOBILE : CELL_SIZE_DESKTOP;
+                    this.renderGridHTML();
+                });
+            }
+
+            // --- LOGIC: GENERATOR ---
+            regenerate() {
+                // Reset Grid
+                this.grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+                this.placedIds = new Set();
+
+                // Sort Words: Starred > Length > Random
+                let sortedWords = [...this.words].sort((a, b) => {
+                    if (a.starred && !b.starred) return -1;
+                    if (!a.starred && b.starred) return 1;
+                    return b.text.length - a.text.length || 0.5 - Math.random();
+                });
+
+                if (sortedWords.length === 0) {
+                    this.updateUI();
+                    return;
+                }
+
+                // 1. First Word Center
+                const first = sortedWords[0];
+                const startR = Math.floor(GRID_SIZE / 2);
+                const startC = Math.floor(GRID_SIZE / 2) - Math.floor(first.text.length / 2);
+                const color1 = this.getColor(first.starred);
+
+                for (let i = 0; i < first.text.length; i++) {
+                    this.grid[startR][startC + i] = { char: first.text[i], color: color1, id: first.id, starred: first.starred };
+                }
+                this.placedIds.add(first.id);
+
+                // 2. Others
+                const rows = Array.from({ length: GRID_SIZE }, (_, k) => k).sort(() => 0.5 - Math.random());
+                const cols = Array.from({ length: GRID_SIZE }, (_, k) => k).sort(() => 0.5 - Math.random());
+
+                for (let i = 1; i < sortedWords.length; i++) {
+                    const w = sortedWords[i];
+                    let placed = false;
+                    const color = this.getColor(w.starred);
+
+                    word_loop: for (let j = 0; j < w.text.length; j++) {
+                        for (let r of rows) {
+                            for (let c of cols) {
+                                const cell = this.grid[r][c];
+                                if (cell && cell.char === w.text[j]) {
+                                    // Try H
+                                    if (this.canPlace(w.text, r, c - j, 'H')) {
+                                        this.placeWord(w, r, c - j, 'H', color);
+                                        placed = true; break word_loop;
+                                    }
+                                    // Try V
+                                    if (this.canPlace(w.text, r - j, c, 'V')) {
+                                        this.placeWord(w, r - j, c, 'V', color);
+                                        placed = true; break word_loop;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (placed) this.placedIds.add(w.id);
+                }
+
+                this.updateUI();
+
+                // Center Grid (delayed for DOM update)
+                setTimeout(() => {
+                    const gc = this.els.gridContainer;
+                    gc.scrollTo({
+                        left: (gc.scrollWidth - gc.clientWidth) / 2,
+                        top: (gc.scrollHeight - gc.clientHeight) / 2,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            }
+
+            canPlace(word, r, c, dir) {
+                if (dir === 'H') {
+                    if (c < 0 || c + word.length > GRID_SIZE) return false;
+                    if (c > 0 && this.grid[r][c - 1]) return false;
+                    if (c + word.length < GRID_SIZE && this.grid[r][c + word.length]) return false;
+                } else {
+                    if (r < 0 || r + word.length > GRID_SIZE) return false;
+                    if (r > 0 && this.grid[r - 1][c]) return false;
+                    if (r + word.length < GRID_SIZE && this.grid[r + word.length][c]) return false;
+                }
+
+                for (let i = 0; i < word.length; i++) {
+                    const rr = dir === 'H' ? r : r + i;
+                    const cc = dir === 'H' ? c + i : c;
+                    const cell = this.grid[rr][cc];
+
+                    if (cell && cell.char !== word[i]) return false;
+
+                    // Adjacency check
+                    if (dir === 'H') {
+                        if (rr > 0 && this.grid[rr - 1][cc] && (!cell || this.grid[rr - 1][cc].id !== cell.id)) return false;
+                        if (rr < GRID_SIZE - 1 && this.grid[rr + 1][cc] && (!cell || this.grid[rr + 1][cc].id !== cell.id)) return false;
+                    } else {
+                        if (cc > 0 && this.grid[rr][cc - 1] && (!cell || this.grid[rr][cc - 1].id !== cell.id)) return false;
+                        if (cc < GRID_SIZE - 1 && this.grid[rr][cc + 1] && (!cell || this.grid[rr][cc + 1].id !== cell.id)) return false;
+                    }
+                }
+                return true;
+            }
+
+            placeWord(wordObj, r, c, dir, color) {
+                for (let i = 0; i < wordObj.text.length; i++) {
+                    const rr = dir === 'H' ? r : r + i;
+                    const cc = dir === 'H' ? c + i : c;
+                    this.grid[rr][cc] = { char: wordObj.text[i], color, id: wordObj.id, starred: wordObj.starred };
+                }
+            }
+
+            getColor(starred) {
+                if (starred) return '#fbbf24'; // Gold
+                // Random Pastel Neon
+                const hues = [160, 200, 250, 300, 330];
+                const hue = hues[Math.floor(Math.random() * hues.length)];
+                return `hsl(${hue}, 70%, 75%)`;
+            }
+
+            // --- UI RENDERERS ---
+
+            updateUI() {
+                this.renderGridHTML();
+                this.renderList();
+                this.renderStats();
+            }
+
+            renderGridHTML() {
+                // Setup grid container style
+                this.els.gridBoard.style.display = 'grid';
+                this.els.gridBoard.style.gridTemplateColumns = `repeat(${GRID_SIZE}, ${this.cellSize}px)`;
+                this.els.gridBoard.style.width = 'max-content';
+
+                let html = '';
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        const cell = this.grid[r][c];
+                        const size = this.cellSize;
+
+                        // Empty Cell (Dot)
+                        if (!cell) {
+                            html += `
+                                <div style="width:${size}px; height:${size}px;" class="flex items-center justify-center">
+                                    <div class="w-1 h-1 bg-dark-700 rounded-full opacity-50"></div>
+                                </div>`;
+                        } else {
+                            // Filled Cell
+                            const starIcon = cell.starred ?
+                                `<div class="absolute -top-1.5 -right-1.5 bg-dark-800 text-amber-400 rounded-full p-0.5 border border-dark-600 shadow-sm z-20">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                </div>` : '';
+
+                            html += `
+                                <div style="width:${size}px; height:${size}px;" class="flex items-center justify-center relative p-0.5">
+                                    <div class="w-full h-full rounded-[4px] shadow-lg flex items-center justify-center font-bold text-dark-900 z-10 animate-pop border-b-4 border-black/20 relative"
+                                         style="background-color: ${cell.color}; font-size: ${size * 0.5}px;">
+                                        <span class="tile-text">${cell.char}</span>
+                                        ${starIcon}
+                                    </div>
+                                </div>`;
+                        }
+                    }
+                }
+                this.els.gridBoard.innerHTML = html;
+            }
+
+            renderList() {
+                this.els.wordCount.textContent = this.words.length;
+                let html = '';
+
+                if (this.words.length === 0) {
+                    html = `<div class="text-center py-10 opacity-30 text-slate-500 italic text-sm">Aucun mot</div>`;
+                }
+
+                this.words.forEach(w => {
+                    const placed = this.placedIds.has(w.id);
+                    const starClass = w.starred ? "text-amber-400 fill-amber-400" : "text-dark-400 hover:text-amber-400";
+                    const bgClass = placed
+                        ? (w.starred ? "bg-amber-900/20 border-amber-500/30" : "bg-dark-700/50 border-dark-600 hover:border-indigo-500/50")
+                        : "bg-red-900/10 border-red-900/30 opacity-60";
+                    const statusColor = placed ? "text-emerald-400" : "text-red-400";
+                    const statusText = placed ? "PLACÉ" : "NON PLACÉ";
+
+                    html += `
+                        <div class="group flex items-center justify-between p-3 rounded-lg border ${bgClass} transition-all duration-200">
+                            <div class="flex items-center gap-3">
+                                <button onclick="app.toggleStar('${w.id}')" class="p-1 rounded-full hover:bg-dark-600/50 transition-colors ${starClass}">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="${w.starred ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                </button>
+                                <div>
+                                    <div class="font-bold text-sm tracking-wide ${placed ? 'text-slate-200' : 'text-slate-500 line-through'}">${w.text}</div>
+                                    <div class="text-[10px] font-bold mt-0.5 ${statusColor}">${statusText}</div>
+                                </div>
+                            </div>
+                            <button onclick="app.removeWord('${w.id}')" class="text-dark-500 hover:text-red-400 hover:bg-red-400/10 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            </button>
+                        </div>
+                    `;
+                });
+                this.els.wordList.innerHTML = html;
+            }
+
+            renderSuggestions() {
+                let html = '';
+                for (const [cat, words] of Object.entries(SUGGESTIONS)) {
+                    html += `
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> ${cat}
+                            </h3>
+                            <div class="flex flex-wrap gap-2">
+                                ${words.map(w => {
+                        const exists = this.words.some(x => x.text === w);
+                        const cls = exists
+                            ? "bg-dark-800 text-dark-500 border-transparent cursor-default"
+                            : "bg-dark-800 text-slate-300 border-dark-600 hover:border-indigo-500 hover:text-indigo-400 cursor-pointer hover:shadow-lg hover:shadow-indigo-500/10";
+                        const icon = exists
+                            ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`
+                            : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+                        return `<button onclick="app.addWord('${w}')" ${exists ? 'disabled' : ''} class="text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${cls}">
+                                        ${icon} ${w}
+                                    </button>`;
+                    }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                this.els.sugContainer.innerHTML = html;
+            }
+
+            renderStats() {
+                const missed = this.words.length - this.placedIds.size;
+                if (missed > 0) {
+                    this.els.stats.innerHTML = `
+                        <svg class="text-orange-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                        <span class="text-orange-400">${missed} manquants</span>
+                    `;
+                    this.els.stats.classList.remove('hidden');
+                } else {
+                    this.els.stats.innerHTML = `
+                        <svg class="text-emerald-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <span class="text-emerald-400">Complet !</span>
+                    `;
+                    if (this.words.length === 0) this.els.stats.classList.add('hidden');
+                    else this.els.stats.classList.remove('hidden');
+                }
+            }
+
+            // --- ACTIONS ---
+
+            addFromInput() {
+                const val = this.els.input.value;
+                if (!val) return;
+                this.addWord(val);
+                this.els.input.value = "";
+            }
+
+            addWord(text) {
+                const clean = text.trim().toUpperCase().replace(/[^A-Z]/g, '');
+                if (clean.length < 2) return;
+                if (this.words.some(w => w.text === clean)) return;
+
+                this.words.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    text: clean,
+                    starred: false
+                });
+                this.regenerate();
+                this.switchTab('inventory');
+                this.renderSuggestions(); // Update disabled states
+            }
+
+            removeWord(id) {
+                this.words = this.words.filter(w => w.id !== id);
+                this.regenerate();
+                this.renderSuggestions();
+            }
+
+            toggleStar(id) {
+                this.words = this.words.map(w => w.id === id ? { ...w, starred: !w.starred } : w);
+                this.regenerate();
+            }
+
+            confirmClear() {
+                if (confirm("Tout effacer ?")) {
+                    this.words = [];
+                    this.regenerate();
+                    this.renderSuggestions();
+                }
+            }
+
+            switchTab(tab) {
+                if (tab === 'inventory') {
+                    this.els.tabInv.classList.replace('text-slate-500', 'text-indigo-400');
+                    this.els.tabInv.classList.replace('border-transparent', 'border-indigo-500');
+                    this.els.tabInv.classList.add('bg-dark-700/30');
+
+                    this.els.tabSug.classList.replace('text-indigo-400', 'text-slate-500');
+                    this.els.tabSug.classList.replace('border-indigo-500', 'border-transparent');
+                    this.els.tabSug.classList.remove('bg-dark-700/30');
+
+                    this.els.contentInv.classList.remove('hidden');
+                    this.els.contentSug.classList.add('hidden');
+                } else {
+                    this.els.tabSug.classList.replace('text-slate-500', 'text-indigo-400');
+                    this.els.tabSug.classList.replace('border-transparent', 'border-indigo-500');
+                    this.els.tabSug.classList.add('bg-dark-700/30');
+
+                    this.els.tabInv.classList.replace('text-indigo-400', 'text-slate-500');
+                    this.els.tabInv.classList.replace('border-indigo-500', 'border-transparent');
+                    this.els.tabInv.classList.remove('bg-dark-700/30');
+
+                    this.els.contentInv.classList.add('hidden');
+                    this.els.contentSug.classList.remove('hidden');
+                }
+            }
+
+            initDragScroll() {
+                const slider = this.els.gridContainer;
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+                let startY;
+                let scrollTop;
+
+                slider.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    slider.classList.add('active');
+                    startX = e.pageX - slider.offsetLeft;
+                    scrollLeft = slider.scrollLeft;
+                    startY = e.pageY - slider.offsetTop;
+                    scrollTop = slider.scrollTop;
+                });
+                slider.addEventListener('mouseleave', () => { isDown = false; });
+                slider.addEventListener('mouseup', () => { isDown = false; });
+                slider.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - slider.offsetLeft;
+                    const walkX = (x - startX) * 1.5; // Scroll-fast speed
+                    slider.scrollLeft = scrollLeft - walkX;
+
+                    const y = e.pageY - slider.offsetTop;
+                    const walkY = (y - startY) * 1.5;
+                    slider.scrollTop = scrollTop - walkY;
+                });
+            }
+        }
+
+        // Start App
+        const app = new ScrabbleApp();
+    </script>
+</body>
+
+</html>
