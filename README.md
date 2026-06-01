@@ -1,46 +1,43 @@
-# 🎨 ScrabbleArt 
+# ScrabbleArt
 
-**ScrabbleArt** est un outil simple  pour créer des mots croisés artistiques à partir de vos propres listes de mots.
+ScrabbleArt is a simple web-based tool for creating artistic crossword layouts from your own custom word lists.
 
----
+The application organizes your words on an infinite grid to generate creative visual arrangements.
 
-## 📋 À propos
+[Launch the Application](https://infinition.github.io/ScrabbleArt/)
 
-ScrabbleArt vous permet de visualiser la manière dont vos mots peuvent **s'imbriquer harmonieusement** les uns dans les autres sur une **grille infinie**, avec une approche créative et ludique.
+<img width="1457" height="1178" alt="ScrabbleArt interface layout" src="https://github.com/user-attachments/assets/a89b4eb4-b730-4604-9265-3466884ab292" />
 
-https://infinition.github.io/ScrabbleArt/
+## Features
 
+- **Dynamic Generation**: Every click recalculates a unique layout.
+- **Dark Mode**: A clean, modern dark user interface.
+- **Responsive Design**: Optimizes layout for mobile, tablet, and desktop viewports.
+- **Interactive Grid**: Pan and navigate freely across the infinite grid canvas.
+- **Priority Words**: Star specific words to prioritize their placement on the grid.
 
-<img width="1457" height="1178" alt="image" src="https://github.com/user-attachments/assets/a89b4eb4-b730-4604-9265-3466884ab292" />
+## Usage
 
+### Getting Started
+Simply open `index.html` in any modern web browser.
 
-### ✨ Fonctionnalités principales
+### Word Management
+- Enter a word in the sidebar and submit.
+- Click the star icon next to a word to prioritize it during layout generation.
+- Click the trash icon to remove a word from the list.
+- Use the suggestions tab to load themed word lists instantly.
+- Click regenerate to calculate a new layout.
 
-- ✨ **Génération unique** : Chaque clic sur **Régénérer** crée une disposition totalement nouvelle.
-- 🌙 **Mode Sombre** : Interface moderne, immersive et reposante.
-- 📱 **Adaptatif** : Fonctionne parfaitement sur mobile, tablette et ordinateur.
-- 🖱️ **Navigation fluide** : Glissez pour vous déplacer librement dans la grille.
-- ⭐ **Priorité intelligente** : Marquez vos mots favoris avec une étoile pour qu’ils soient placés en premier.
+## Star History
 
----
+<a href="https://www.star-history.com/?repos=infinition%2FScrabbleArt&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=infinition/ScrabbleArt&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=infinition/ScrabbleArt&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=infinition/ScrabbleArt&type=date&legend=top-left" />
+ </picture>
+</a>
 
-## 🚀 Comment l'utiliser ?
+## License
 
-### ▶️ Lancement  
-Ouvrez simplement **index.html** dans votre navigateur.
-
-### ➕ Ajouter des mots  
-Saisissez un mot dans le champ de gauche puis validez.
-
-### 💡 Inspirations rapides  
-L’onglet **Suggestions** vous permet d’ajouter des listes thématiques en un clic.
-
-### 🎛️ Personnalisation
-
-- ⭐ **Étoile** : Marque le mot comme prioritaire.  
-- 🗑️ **Corbeille** : Supprime le mot de la liste.  
-- 🔄 **Régénérer** : Produit une nouvelle forme en réutilisant les mêmes mots.
-
----
-
-Amusez-vous à créer des compositions uniques et artistiques ! ✨
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
