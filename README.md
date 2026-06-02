@@ -1,4 +1,6 @@
-# ScrabbleArt
+﻿# ScrabbleArt
+
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black) [![Release](https://img.shields.io/github/v/release/infinition/ScrabbleArt?style=flat)](https://github.com/infinition/ScrabbleArt/releases) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/infinition)
 
 ScrabbleArt is a simple web-based tool for creating artistic crossword layouts from your own custom word lists.
 
@@ -40,4 +42,4 @@ Simply open `index.html` in any modern web browser.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT. See [LICENSE](LICENSE).
